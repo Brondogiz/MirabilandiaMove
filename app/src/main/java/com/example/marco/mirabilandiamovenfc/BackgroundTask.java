@@ -36,11 +36,9 @@ public class BackgroundTask extends AsyncTask<String,Void,String> {
     @Override
     protected String doInBackground(String... params) {
 
-        String connect_url="http://localhost:8080/connection_database_android.php";
+        String connect_url="http://192.168.1.7/connection_database_android.php";
 
-
-
-        String  ciao;
+        String  ciao = null;
 
        // if(method.equals("register")){
             /*
@@ -65,7 +63,6 @@ public class BackgroundTask extends AsyncTask<String,Void,String> {
                     Log.v("Sono nel while",ciao);
                 }
 
-                Log.v("Sono fuori dal while",ciao);
                 /*
                 String data= URLEncoder.encode("user", "UTF-8") + "="+URLEncoder.encode(name,"UTF-8")+"&"+
                         URLEncoder.encode("user_surname","UTF-8") + "="+URLEncoder.encode(user_surname,"UTF-8")+"&"+
@@ -89,7 +86,6 @@ public class BackgroundTask extends AsyncTask<String,Void,String> {
 
         return null;
     }
-
 
 
     @Override
