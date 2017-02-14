@@ -2,12 +2,6 @@ package com.example.marco.mirabilandiamovenfc;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -20,7 +14,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.Buffer;
 
 /**
  * Created by Marco on 13/02/2017.
@@ -28,11 +21,11 @@ import java.nio.Buffer;
 
 public class BackgroundTask extends AsyncTask<String, Void, String> {
 
-    Context ctx;
+    Context context;
     //Integer points1;
 
-    BackgroundTask(Context ctx) {
-        this.ctx = ctx;
+    BackgroundTask(Context context) {
+        this.context = context;
     }
 
     @Override

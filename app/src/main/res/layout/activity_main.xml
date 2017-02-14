@@ -14,14 +14,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Messaggio NFC non stampato"
-        android:id="@+id/textMessageNfc"/>
+        android:id="@+id/textMessageNfc"
+        android:textSize="20dp"/>
 
-    <Button
+    <TextView
+        android:text="TextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/textMessageNfc"
-        android:text="Connect to Database"
-        android:id="@+id/connect"
-        />
+        android:layout_below="@+id/textMessageNfc"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="13dp"
+        android:layout_marginTop="17dp"
+        android:id="@+id/textCounter"
+        android:textSize="30dp"/>
 
 </RelativeLayout>

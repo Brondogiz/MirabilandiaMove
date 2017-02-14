@@ -13,61 +13,99 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import java.io.UnsupportedEncodingException;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 
 public class MainActivity extends AppCompatActivity {
 
     public final String TAG = "DemoNFC";
-    private Button connectDatabase;
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
     private NfcAdapter nfcAdapter;
     TextView textMessageNfc;
-    Integer points = 2;
+    TextView txtCounter;
+    Map<Integer, Long> timers = new HashMap<>();
+    int i = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         textMessageNfc = (TextView) findViewById(R.id.textMessageNfc);
-        connectDatabase = (Button) findViewById(R.id.connect);
+        txtCounter = (TextView) findViewById(R.id.textCounter);
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        connectDatabase.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
+        if (nfcAdapter == null) {
 
-
-
-                }
-
-        });
-
-        if(nfcAdapter == null){
-
-            Toast.makeText(this,"Il dispoditivo non supporta nfc",Toast.LENGTH_LONG);
+            Toast.makeText(this, "Il dispoditivo non supporta nfc", Toast.LENGTH_LONG);
             finish();
             return;
         }
 
-        if(nfcAdapter.isEnabled()){
+        if (nfcAdapter.isEnabled()) {
 
-            textMessageNfc.setText("NFC é ATTIVATO");
-        }else{
+            textMessageNfc.setText("NFC È ATTIVO");
+        } else {
 
-            textMessageNfc.setText("NFC NON ARRIVATO");
+            textMessageNfc.setText("NFC NON È ATTIVO");
 
         }
 
+
         handleIntent(getIntent());
 
+
+        /*long diffInMs = endDate.getTime() - startDate.getTime();
+
+        long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);*/
+        /*new CountDownTimer(1800000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+                txtCounter.setText("seconds remaining: " + millisUntilFinished / 1000);
+            }
+
+            public void onFinish() {
+                txtCounter.setText("done!");
+            }
+        }.start();*/
+
+        /*class MyTimerTask extends TimerTask {
+
+            @Override
+            public void run() {
+                Calendar calendar = Calendar.getInstance();
+                calendar.set
+                SimpleDateFormat simpleDateFormat =
+                        new SimpleDateFormat("dd:MMMM:yyyy HH:mm:ss a");
+                final String strDate = simpleDateFormat.format(calendar.getTime());
+
+                runOnUiThread(new Runnable(){
+
+                    @Override
+                    public void run() {
+                        txtCounter.setText(strDate);
+                    }});
+            }
+
+        }
+
+        Timer timer = new Timer();
+        MyTimerTask  myTimerTask = new MyTimerTask();
+        timer.schedule(myTimerTask, 1000, 1000);*/
     }
+
 
     @Override
     protected void onResume() {
@@ -157,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.disableForegroundDispatch(activity);
     }
 
+
     private class NdefReaderTask extends AsyncTask<Tag, Void, String> {
 
         @Override
@@ -210,10 +249,44 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             if (result != null) {
-                textMessageNfc.setText("Read content: " + result);
+                textMessageNfc.setText("CodeID: " + result);
                 BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                 backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+                Calendar calendar = Calendar.getInstance();
+
+                if (timers.containsKey(i-1)) {
+                    Iterator it = timers.entrySet().iterator();
+
+                    while (it.hasNext()) {
+                        Map.Entry entry = (Map.Entry) it.next();
+                        if (entry.getKey().equals(0)) {
+                            Calendar calendar1 = Calendar.getInstance();
+                            long diffInMs = calendar1.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
+
+                            Log.v("TEMPO", String.valueOf(entry.getValue()));
+                            Log.v("TEMPO2", String.valueOf(calendar1.getTime().getTime()));
+                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+                            //Log.v("Provaaaa", String.valueOf(System.currentTimeMillis()));
+                            //Log.v("VALORE", String.valueOf(Long.valueOf(String.valueOf(entry.getValue()))));
+                            //Long test = Long.valueOf(String.valueOf(entry.getValue()))-System.currentTimeMillis();
+                            Log.v("Provaaaa", String.valueOf(diffInSec));
+
+                        }
+
+                    }
+                } else {
+                    timers.put(i, calendar.getTime().getTime());
+                    i++;
+                }
+
+
+                Log.v("TEMPOTOTALE", String.valueOf(timers));
+
+                Log.v("numero", String.valueOf(i));
+
+
             }
         }
     }
+
 }
