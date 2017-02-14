@@ -5,6 +5,10 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -22,12 +26,15 @@ import java.nio.Buffer;
  * Created by Marco on 13/02/2017.
  */
 
-public class BackgroundTask extends AsyncTask<String,Void,String> {
+public class BackgroundTask extends AsyncTask<String, Void, String> {
 
     Context ctx;
-    BackgroundTask(Context ctx){
-        this.ctx=ctx;
+    //Integer points1;
+
+    BackgroundTask(Context ctx) {
+        this.ctx = ctx;
     }
+
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
@@ -36,53 +43,63 @@ public class BackgroundTask extends AsyncTask<String,Void,String> {
     @Override
     protected String doInBackground(String... params) {
 
-        String connect_url="http://192.168.1.7/connection_database_android.php";
+        String connect_url = "http://192.168.1.7/insert_points_database.php";
+        String codeId = params[0];
+        String points = params[1];
 
-        String  ciao = null;
+        try {
+            URL url = new URL(connect_url);
+            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            httpURLConnection.setRequestMethod("POST");
+            httpURLConnection.setDoOutput(true);
+            httpURLConnection.setDoInput(true);
+            OutputStream OS = httpURLConnection.getOutputStream();
+            BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
+            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(codeId, "UTF-8")+"&"+
+                    URLEncoder.encode("points","UTF-8") + "="+URLEncoder.encode(String.valueOf(points),"UTF-8");
+            bufferedWriter.write(data);
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            OS.close();
 
-       // if(method.equals("register")){
-            /*
-            String name=params[1];
-            String user_surname=params[2];
-            String user_name=params[3];
-            String user_pass=params[4];
-            String user_mail=params[5];
-            */
-            try {
-                URL url=new URL(connect_url);
-                HttpURLConnection httpURLConnection=(HttpURLConnection)url.openConnection();
-                httpURLConnection.setRequestMethod("POST");
-                httpURLConnection.setDoOutput(true);
-                InputStream IS=httpURLConnection.getInputStream();
-                BufferedReader bufferedReader=new BufferedReader((new InputStreamReader(IS,"UTF-8")));
+            InputStream IS = httpURLConnection.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(IS, "UTF-8")));
 
-                StringBuilder stringBuilder = new StringBuilder();
-                while( (ciao = bufferedReader.readLine()) !=null){
-
-                    stringBuilder.append(ciao);
-                    Log.v("Sono nel while",ciao);
-                }
-
-                /*
-                String data= URLEncoder.encode("user", "UTF-8") + "="+URLEncoder.encode(name,"UTF-8")+"&"+
-                        URLEncoder.encode("user_surname","UTF-8") + "="+URLEncoder.encode(user_surname,"UTF-8")+"&"+
-                        URLEncoder.encode("user_name","UTF-8") + "="+URLEncoder.encode(user_name,"UTF-8")+"&"+
-                        URLEncoder.encode("user_pass","UTF-8") + "="+URLEncoder.encode(user_pass,"UTF-8")+"&"+
-                        URLEncoder.encode("user_email","UTF-8") + "="+URLEncoder.encode(user_mail,"UTF-8");
-                        */
-                bufferedReader.close();
-                IS.close();
-
-                httpURLConnection.disconnect();
-
-                return stringBuilder.toString();
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+            StringBuilder stringBuilder = new StringBuilder();
+            String line = "";
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
             }
-       // }
+
+            bufferedReader.close();
+            IS.close();
+            httpURLConnection.disconnect();
+
+
+            /*URL url1 = new URL(points_url);
+            HttpURLConnection httpURLConnection1 = (HttpURLConnection) url1.openConnection();
+            httpURLConnection1.setRequestMethod("POST");
+            httpURLConnection1.setDoOutput(true);
+            OutputStream os = httpURLConnection1.getOutputStream();
+            BufferedWriter bf = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
+            String data_points = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(codeId, "UTF-8")+"&"+
+                    URLEncoder.encode("points","UTF-8") + "="+URLEncoder.encode(String.valueOf(points),"UTF-8");
+            bf.write(data_points);
+            bf.flush();
+            bf.close();
+            os.close();
+
+
+            httpURLConnection1.disconnect();*/
+
+
+            return stringBuilder.toString();
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return null;
     }
@@ -95,6 +112,10 @@ public class BackgroundTask extends AsyncTask<String,Void,String> {
 
     @Override
     protected void onPostExecute(String result) {
-        Toast.makeText(ctx, result, Toast.LENGTH_SHORT).show();
+  /*JSONObject jsonObject = new JSONObject(String.valueOf(stringBuilder));
+            JSONArray jsonArray = jsonObject.getJSONArray("server_response");
+            JSONObject object = jsonArray.getJSONObject(0);
+            points1 = object.getInt("punti");
+            Log.v("RISULTATO", String.valueOf(points1));*/
     }
 }

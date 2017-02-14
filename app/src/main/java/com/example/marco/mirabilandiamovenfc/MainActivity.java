@@ -12,23 +12,13 @@ import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     private NfcAdapter nfcAdapter;
     TextView textMessageNfc;
-
+    Integer points = 2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,14 +38,12 @@ public class MainActivity extends AppCompatActivity {
         textMessageNfc = (TextView) findViewById(R.id.textMessageNfc);
         connectDatabase = (Button) findViewById(R.id.connect);
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-
-
         connectDatabase.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                backgroundTask.execute();
+
+
 
                 }
 
@@ -223,6 +211,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             if (result != null) {
                 textMessageNfc.setText("Read content: " + result);
+                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
             }
         }
     }
