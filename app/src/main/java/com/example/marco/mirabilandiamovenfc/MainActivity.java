@@ -16,13 +16,29 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +49,11 @@ public class MainActivity extends AppCompatActivity {
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
     private NfcAdapter nfcAdapter;
-    TextView textMessageNfc;
-    TextView txtCounter;
-    Map<Integer, Long> timers = new HashMap<>();
-    int i = 0;
+    private TextView textMessageNfc;
+    private TextView txtCounter;
+    private Map<Integer, Long> timers;
+    public List<Integer> codeList;
+    int codeID = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +63,9 @@ public class MainActivity extends AppCompatActivity {
         textMessageNfc = (TextView) findViewById(R.id.textMessageNfc);
         txtCounter = (TextView) findViewById(R.id.textCounter);
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+
+        timers = new HashMap<>();
+        codeList = new ArrayList<>();
 
         if (nfcAdapter == null) {
 
@@ -63,48 +83,110 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+        new ReadIDTask().execute();
 
         handleIntent(getIntent());
+    }
 
+    /*--------------INIZIO TASK LETTURA ID--------------*/
+    private class ReadIDTask extends AsyncTask<Void, Void, String> {
 
-        /*long diffInMs = endDate.getTime() - startDate.getTime();
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
 
-        long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);*/
-        /*new CountDownTimer(1800000, 1000) {
+        @Override
+        protected String doInBackground(Void... voids) {
+            String connect_url = "http://192.168.1.7/select_all_id.php";
 
-            public void onTick(long millisUntilFinished) {
-                txtCounter.setText("seconds remaining: " + millisUntilFinished / 1000);
+            try {
+                URL url = new URL(connect_url);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setDoInput(true);
+
+                InputStream IS = httpURLConnection.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(IS, "UTF-8")));
+
+                StringBuilder stringBuilder = new StringBuilder();
+                String line = "";
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line);
+                }
+
+                bufferedReader.close();
+                IS.close();
+                httpURLConnection.disconnect();
+
+                return stringBuilder.toString();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            return null;
+        }
 
-            public void onFinish() {
-                txtCounter.setText("done!");
-            }
-        }.start();*/
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+        }
 
-        /*class MyTimerTask extends TimerTask {
-
-            @Override
-            public void run() {
-                Calendar calendar = Calendar.getInstance();
-                calendar.set
-                SimpleDateFormat simpleDateFormat =
-                        new SimpleDateFormat("dd:MMMM:yyyy HH:mm:ss a");
-                final String strDate = simpleDateFormat.format(calendar.getTime());
-
-                runOnUiThread(new Runnable(){
-
-                    @Override
-                    public void run() {
-                        txtCounter.setText(strDate);
-                    }});
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                JSONObject jsonObject = new JSONObject(String.valueOf(result));
+                JSONArray jsonArray = jsonObject.getJSONArray("all_id");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject object = jsonArray.getJSONObject(i);
+                    codeList.add(object.getInt("codeId"));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
 
         }
-
-        Timer timer = new Timer();
-        MyTimerTask  myTimerTask = new MyTimerTask();
-        timer.schedule(myTimerTask, 1000, 1000);*/
     }
+    /*--------------FINE TASK LETTURA ID--------------*/
+
+    private void insertID(Integer codeID) {
+
+        try {
+            String connect_url = "http://192.168.1.7/add_user_id.php";
+            URL url = new URL(connect_url);
+            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+            httpURLConnection.setRequestMethod("POST");
+            httpURLConnection.setDoOutput(true);
+            httpURLConnection.setDoInput(true);
+            OutputStream OS = httpURLConnection.getOutputStream();
+            BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
+            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeID), "UTF-8");
+            bufferedWriter.write(data);
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            OS.close();
+
+            httpURLConnection.disconnect();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
 
 
     @Override
@@ -217,8 +299,11 @@ public class MainActivity extends AppCompatActivity {
                     } catch (UnsupportedEncodingException e) {
                         Log.e(TAG, "Unsupported Encoding", e);
                     }
+
+
                 }
             }
+
 
             return null;
         }
@@ -250,40 +335,32 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             if (result != null) {
                 textMessageNfc.setText("CodeID: " + result);
-                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
-                Calendar calendar = Calendar.getInstance();
+                codeID = Integer.parseInt(result);
+                Calendar currentTime = Calendar.getInstance();
 
-                if (timers.containsKey(i-1)) {
-                    Iterator it = timers.entrySet().iterator();
+                if (!timers.containsKey(codeID)) {
+                    timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                    BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                    backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
 
-                    while (it.hasNext()) {
-                        Map.Entry entry = (Map.Entry) it.next();
-                        if (entry.getKey().equals(0)) {
-                            Calendar calendar1 = Calendar.getInstance();
-                            long diffInMs = calendar1.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
-
-                            Log.v("TEMPO", String.valueOf(entry.getValue()));
-                            Log.v("TEMPO2", String.valueOf(calendar1.getTime().getTime()));
-                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
-                            //Log.v("Provaaaa", String.valueOf(System.currentTimeMillis()));
-                            //Log.v("VALORE", String.valueOf(Long.valueOf(String.valueOf(entry.getValue()))));
-                            //Long test = Long.valueOf(String.valueOf(entry.getValue()))-System.currentTimeMillis();
-                            Log.v("Provaaaa", String.valueOf(diffInSec));
-
-                        }
-
-                    }
                 } else {
-                    timers.put(i, calendar.getTime().getTime());
-                    i++;
+                    for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
+                        if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
+
+                            long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
+                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+                            if (diffInSec > 20) {
+                                timers.remove(entry.getKey());
+                                timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+
+                            }
+                            break;
+                        }
+                    }
+
                 }
-
-
-                Log.v("TEMPOTOTALE", String.valueOf(timers));
-
-                Log.v("numero", String.valueOf(i));
-
 
             }
         }
