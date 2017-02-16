@@ -15,25 +15,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -83,111 +66,9 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        new ReadIDTask().execute();
-
+        new ReadIDTask(codeList).execute();
         handleIntent(getIntent());
     }
-
-    /*--------------INIZIO TASK LETTURA ID--------------*/
-    private class ReadIDTask extends AsyncTask<Void, Void, String> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected String doInBackground(Void... voids) {
-            String connect_url = "http://192.168.1.7/select_all_id.php";
-
-            try {
-                URL url = new URL(connect_url);
-                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-                httpURLConnection.setRequestMethod("POST");
-                httpURLConnection.setDoOutput(true);
-                httpURLConnection.setDoInput(true);
-
-                InputStream IS = httpURLConnection.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(IS, "UTF-8")));
-
-                StringBuilder stringBuilder = new StringBuilder();
-                String line = "";
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line);
-                }
-
-                bufferedReader.close();
-                IS.close();
-                httpURLConnection.disconnect();
-
-                return stringBuilder.toString();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (ProtocolException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                JSONObject jsonObject = new JSONObject(String.valueOf(result));
-                JSONArray jsonArray = jsonObject.getJSONArray("all_id");
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject object = jsonArray.getJSONObject(i);
-                    codeList.add(object.getInt("codeId"));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
-    /*--------------FINE TASK LETTURA ID--------------*/
-
-    private void insertID(Integer codeID) {
-
-        try {
-            String connect_url = "http://192.168.1.7/add_user_id.php";
-            URL url = new URL(connect_url);
-            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-            httpURLConnection.setRequestMethod("POST");
-            httpURLConnection.setDoOutput(true);
-            httpURLConnection.setDoInput(true);
-            OutputStream OS = httpURLConnection.getOutputStream();
-            BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
-            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeID), "UTF-8");
-            bufferedWriter.write(data);
-            bufferedWriter.flush();
-            bufferedWriter.close();
-            OS.close();
-
-            httpURLConnection.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
-
-
 
     @Override
     protected void onResume() {
@@ -338,26 +219,33 @@ public class MainActivity extends AppCompatActivity {
                 codeID = Integer.parseInt(result);
                 Calendar currentTime = Calendar.getInstance();
 
-                if (!timers.containsKey(codeID)) {
-                    timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
-                    BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                    backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
-
+                if(!codeList.contains(Integer.parseInt(result))) {
+                    Log.v("CODEID", String.valueOf(codeList.contains(Integer.parseInt(result))));
+                    new AddIDTask().execute(String.valueOf(Integer.parseInt(result)));
+                    codeList.add(Integer.parseInt(result));
                 } else {
-                    for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
-                        if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
 
-                            long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
-                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
-                            if (diffInSec > 20) {
-                                timers.remove(entry.getKey());
-                                timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
-                                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+                    if (!timers.containsKey(codeID)) {
+                        timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                        BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                        backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
 
+                    } else {
+                        for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
+                            if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
+                                long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
+                                long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+                                if (diffInSec > 20) {
+                                    timers.remove(entry.getKey());
+                                    timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                                    BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                    backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+
+                                }
+                                break;
                             }
-                            break;
                         }
+
                     }
 
                 }
