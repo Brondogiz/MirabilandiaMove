@@ -4,17 +4,24 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.icu.text.UnicodeSetSpanner;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import java.io.UnsupportedEncodingException;
 
 import java.util.ArrayList;
@@ -32,8 +39,11 @@ public class MainActivity extends AppCompatActivity {
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
     private NfcAdapter nfcAdapter;
-    private TextView textMessageNfc;
-    private TextView txtCounter;
+    private TextView txtMessageNfc;
+    private TextView txtMessageID;
+    private Button btnReprogram;
+    private Button btnSubmit;
+    private RadioGroup radioGroup;
     private Map<Integer, Long> timers;
     public List<Integer> codeList;
     int codeID = 0;
@@ -43,8 +53,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textMessageNfc = (TextView) findViewById(R.id.textMessageNfc);
-        txtCounter = (TextView) findViewById(R.id.textCounter);
+        txtMessageNfc = (TextView) findViewById(R.id.txtMessageNfc);
+        txtMessageID = (TextView) findViewById(R.id.txtMessageID);
+        radioGroup = (RadioGroup) findViewById(R.id.radio_group);
+        btnReprogram = (Button) findViewById(R.id.btnReprogram);
+        btnSubmit = (Button) findViewById(R.id.btnSubmit);
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
         timers = new HashMap<>();
@@ -59,21 +72,22 @@ public class MainActivity extends AppCompatActivity {
 
         if (nfcAdapter.isEnabled()) {
 
-            textMessageNfc.setText("NFC È ATTIVO");
+            txtMessageNfc.setText("NFC È ATTIVO");
         } else {
 
-            textMessageNfc.setText("NFC NON È ATTIVO");
+            txtMessageNfc.setText("NFC NON È ATTIVO");
 
         }
 
+        setVisibility();
         new ReadIDTask(codeList).execute();
         handleIntent(getIntent());
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
-
         /**
          * It's important, that the activity is in the foreground (resumed). Otherwise
          * an IllegalStateException is thrown.
@@ -215,11 +229,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             if (result != null) {
-                textMessageNfc.setText("CodeID: " + result);
+                txtMessageNfc.setText("CodeID: " + result);
                 codeID = Integer.parseInt(result);
                 Calendar currentTime = Calendar.getInstance();
 
-                if(!codeList.contains(Integer.parseInt(result))) {
+                if (!codeList.contains(Integer.parseInt(result))) {
                     Log.v("CODEID", String.valueOf(codeList.contains(Integer.parseInt(result))));
                     new AddIDTask().execute(String.valueOf(Integer.parseInt(result)));
                     codeList.add(Integer.parseInt(result));
@@ -253,5 +267,47 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    public void onSubmitClicked(View view) {
+        int selectId = radioGroup.getCheckedRadioButtonId();
+        RadioButton radioButton = (RadioButton) findViewById(selectId);
+        if (selectId == -1) {
+            Toast.makeText(getBaseContext(), "Selezionare la tipologia del totem", Toast.LENGTH_SHORT).show();
+        } else {
+            new ReadTotemIDTask(this).execute(String.valueOf(radioButton.getText()));
+        }
+
+    }
+
+    public void setVisibility(){
+        if (new ManagementSharedPreference().getValue(this) == -1) {
+            btnReprogram.setVisibility(View.INVISIBLE);
+        } else {
+            txtMessageID.setVisibility(View.VISIBLE);
+            txtMessageID.setText("L'id del totem è: " + new ManagementSharedPreference().getValue(this));
+            radioGroup.setVisibility(View.GONE);
+            btnSubmit.setVisibility(View.INVISIBLE);
+            btnReprogram.setVisibility(View.VISIBLE);
+
+        }
+    }
+
+   /* public void onRadioButtonClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((RadioButton) view).isChecked();
+
+        // Check which radio button was clicked
+        switch (view.getId()) {
+            case R.id.radio_standard_totem:
+                if (checked)
+                    Toast.makeText(this, "asdd", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.radio_queue_totem:
+                if (checked)
+                    Toast.makeText(this, "asaaaaaaadd", Toast.LENGTH_SHORT).show();
+                // Ninjas rule
+                break;
+        }
+    }*/
 
 }

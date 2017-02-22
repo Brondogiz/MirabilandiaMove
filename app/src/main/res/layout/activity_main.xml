@@ -11,21 +11,64 @@
     tools:context="com.example.marco.mirabilandiamovenfc.MainActivity">
 
     <TextView
+        android:id="@+id/txtMessageNfc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Messaggio NFC non stampato"
-        android:id="@+id/textMessageNfc"
-        android:textSize="20dp"/>
+        android:textSize="20dp" />
 
     <TextView
-        android:text="TextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textMessageNfc"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="13dp"
-        android:layout_marginTop="17dp"
-        android:id="@+id/textCounter"
-        android:textSize="30dp"/>
+        android:id="@+id/txtMessageID"
+        android:text="L'id del totem è :"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        android:layout_marginTop="5dp"
+        android:visibility="gone"
+        android:layout_below="@id/txtMessageNfc"/>
+
+    <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/radio_group"
+        android:layout_marginTop="10dp"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtMessageID"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radio_standard_totem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:text="Totem Standar"
+            android:textSize="19dp" />
+
+        <RadioButton
+            android:id="@+id/radio_queue_totem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:text="Totem in fila"
+            android:textSize="19dp" />
+    </RadioGroup>
+
+
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/radio_group"
+        android:layout_marginTop="10dp"
+        android:text="Conferma"
+        android:onClick="onSubmitClicked"/>
+
+    <Button
+        android:id="@+id/btnReprogram"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/radio_group"
+        android:layout_marginTop="10dp"
+        android:text="Riprogramma" />
 
 </RelativeLayout>
