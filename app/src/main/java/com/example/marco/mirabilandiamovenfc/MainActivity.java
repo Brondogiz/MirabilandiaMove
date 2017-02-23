@@ -2,18 +2,19 @@ package com.example.marco.mirabilandiamovenfc;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.icu.text.UnicodeSetSpanner;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
-import android.provider.MediaStore;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,13 +23,15 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     public final String TAG = "DemoNFC";
     public static final String MIME_TEXT_PLAIN = "text/plain";
+    private Tag tag;
 
     private NfcAdapter nfcAdapter;
     private TextView txtMessageNfc;
@@ -117,6 +121,29 @@ public class MainActivity extends AppCompatActivity {
         handleIntent(intent);
     }
 
+
+
+   /* private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
+
+        //create the message in according with the standard
+        String lang = "en";
+        byte[] textBytes = text.getBytes();
+        byte[] langBytes = lang.getBytes("US-ASCII");
+        int langLength = langBytes.length;
+        int textLength = textBytes.length;
+
+        byte[] payload = new byte[1 + langLength + textLength];
+        payload[0] = (byte) langLength;
+
+        // copy langbytes and textbytes into payload
+        System.arraycopy(langBytes, 0, payload, 1, langLength);
+        System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
+
+        NdefRecord recordNFC = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload);
+        return recordNFC;
+    }*/
+
+
     private void handleIntent(Intent intent) {
         String action = intent.getAction();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
@@ -124,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
             String type = intent.getType();
             if (MIME_TEXT_PLAIN.equals(type)) {
 
-                Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+                tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
                 new NdefReaderTask().execute(tag);
 
             } else {
@@ -133,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
 
             // In case we would still use the Tech Discovered Intent
-            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
             String[] techList = tag.getTechList();
             String searchedTech = Ndef.class.getName();
 
@@ -226,88 +253,144 @@ public class MainActivity extends AppCompatActivity {
             return new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
         }
 
+        private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
+
+            //create the message in according with the standard
+            String lang = "en";
+            byte[] textBytes = text.getBytes();
+            byte[] langBytes = lang.getBytes("US-ASCII");
+            int langLength = langBytes.length;
+            int textLength = textBytes.length;
+
+            byte[] payload = new byte[1 + langLength + textLength];
+            payload[0] = (byte) langLength;
+
+            // copy langbytes and textbytes into payload
+            System.arraycopy(langBytes, 0, payload, 1, langLength);
+            System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
+
+            NdefRecord recordNFC = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload);
+            return recordNFC;
+        }
+
+        private void write(String userId, String startTime, Tag tag) throws IOException, FormatException {
+
+            NdefRecord[] records = {createRecord(userId), createRecord(startTime)};
+            NdefMessage message = new NdefMessage(records);
+            Ndef ndef = Ndef.get(tag);
+            ndef.connect();
+            ndef.writeNdefMessage(message);
+            ndef.close();
+        }
+
         @Override
         protected void onPostExecute(String result) {
             if (result != null) {
                 txtMessageNfc.setText("CodeID: " + result);
                 codeID = Integer.parseInt(result);
                 Calendar currentTime = Calendar.getInstance();
+                ManagementSharedPreference managementSharedPreference = new ManagementSharedPreference();
 
-                if (!codeList.contains(Integer.parseInt(result))) {
-                    Log.v("CODEID", String.valueOf(codeList.contains(Integer.parseInt(result))));
-                    new AddIDTask().execute(String.valueOf(Integer.parseInt(result)));
-                    codeList.add(Integer.parseInt(result));
+                if (managementSharedPreference.getTotemID(MainActivity.this) == -1) {
+                    Toast.makeText(MainActivity.this, "Totem non ancora programmato", Toast.LENGTH_SHORT);
                 } else {
-
-                    if (!timers.containsKey(codeID)) {
-                        timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
-                        BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                        backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
-
-                    } else {
-                        for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
-                            if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
-                                long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
-                                long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
-                                if (diffInSec > 20) {
-                                    timers.remove(entry.getKey());
-                                    timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
-                                    BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                    backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
-
-                                }
-                                break;
-                            }
+                    if (managementSharedPreference.getTotemType(MainActivity.this).equals("Totem in fila")) {
+                        try {
+                            write(result, String.valueOf(currentTime.getTime().getTime()), tag);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (FormatException e) {
+                            e.printStackTrace();
                         }
 
                     }
+                    if (!codeList.contains(Integer.parseInt(result))) {
+                        Log.v("CODEID", String.valueOf(codeList.contains(Integer.parseInt(result))));
+                        new AddIDTask().execute(String.valueOf(Integer.parseInt(result)));
+                        codeList.add(Integer.parseInt(result));
+                    } else {
 
+                        if (!timers.containsKey(codeID)) {
+                            timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                            BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                            backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+
+                        } else {
+                            for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
+                                if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
+                                    long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
+                                    long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+                                    if (diffInSec > 20) {
+                                        timers.remove(entry.getKey());
+                                        timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                                        BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                        backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+
+                                    }
+                                    break;
+                                }
+                            }
+
+                        }
+
+                    }
                 }
-
             }
         }
     }
 
     public void onSubmitClicked(View view) {
         int selectId = radioGroup.getCheckedRadioButtonId();
-        RadioButton radioButton = (RadioButton) findViewById(selectId);
+        final RadioButton radioButton = (RadioButton) findViewById(selectId);
         if (selectId == -1) {
             Toast.makeText(getBaseContext(), "Selezionare la tipologia del totem", Toast.LENGTH_SHORT).show();
         } else {
-            new ReadTotemIDTask(this).execute(String.valueOf(radioButton.getText()));
+            if (radioButton.getText().equals("Totem inizio fila") || radioButton.getText().equals("Totem fine fila")) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Totem in fila")
+                        .setMessage("Se si programma un totem di inizio fila, il totem successivo da programmare DEVE essere un totem di fine fila. " +
+                                "Non è possibile programmare un totem di fine fila prima di un totem di inizio fila. Procedere con l'operazione?")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                new SetTotemTask(MainActivity.this).execute(String.valueOf(radioButton.getText()));
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+            } else {
+                new SetTotemTask(this).execute(String.valueOf(radioButton.getText()));
+            }
         }
 
     }
 
-    public void setVisibility(){
-        if (new ManagementSharedPreference().getValue(this) == -1) {
-            btnReprogram.setVisibility(View.INVISIBLE);
+    public void onReprogramClicked(View view) {
+        ManagementSharedPreference managementSharedPreference = new ManagementSharedPreference();
+        new ReprogrammingTask().execute(managementSharedPreference.getTotemID(this));
+        managementSharedPreference.removePreference(this);
+        Toast.makeText(this, "Totem resettato correttamente", Toast.LENGTH_SHORT).show();
+        setVisibility();
+    }
+
+    public void setVisibility() {
+        if (new ManagementSharedPreference().getTotemID(this) == -1) {
+            btnReprogram.setVisibility(View.GONE);
+            txtMessageID.setVisibility(View.GONE);
+            radioGroup.setVisibility(View.VISIBLE);
+            btnSubmit.setVisibility(View.VISIBLE);
         } else {
             txtMessageID.setVisibility(View.VISIBLE);
-            txtMessageID.setText("L'id del totem è: " + new ManagementSharedPreference().getValue(this));
+            txtMessageID.setText("L'id del totem è: " + new ManagementSharedPreference().getTotemID(this));
             radioGroup.setVisibility(View.GONE);
             btnSubmit.setVisibility(View.INVISIBLE);
             btnReprogram.setVisibility(View.VISIBLE);
 
         }
     }
-
-   /* public void onRadioButtonClicked(View view) {
-        // Is the button now checked?
-        boolean checked = ((RadioButton) view).isChecked();
-
-        // Check which radio button was clicked
-        switch (view.getId()) {
-            case R.id.radio_standard_totem:
-                if (checked)
-                    Toast.makeText(this, "asdd", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.radio_queue_totem:
-                if (checked)
-                    Toast.makeText(this, "asaaaaaaadd", Toast.LENGTH_SHORT).show();
-                // Ninjas rule
-                break;
-        }
-    }*/
 
 }

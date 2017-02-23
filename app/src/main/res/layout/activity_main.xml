@@ -40,16 +40,21 @@
             android:id="@+id/radio_standard_totem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
             android:text="Totem Standar"
             android:textSize="19dp" />
 
         <RadioButton
-            android:id="@+id/radio_queue_totem"
+            android:id="@+id/radio_queue_start_totem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Totem inizio fila"
+            android:textSize="19dp" />
 
-            android:text="Totem in fila"
+        <RadioButton
+            android:id="@+id/radio_queue_end_totem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Totem fine fila"
             android:textSize="19dp" />
     </RadioGroup>
 
@@ -69,6 +74,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/radio_group"
         android:layout_marginTop="10dp"
-        android:text="Riprogramma" />
+        android:text="Riprogramma"
+        android:onClick="onReprogramClicked"/>
 
 </RelativeLayout>

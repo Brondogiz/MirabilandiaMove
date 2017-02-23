@@ -1,8 +1,6 @@
 package com.example.marco.mirabilandiamovenfc;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
@@ -18,10 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -29,10 +25,10 @@ import java.net.URLEncoder;
  * Created by erik_ on 22/02/2017.
  */
 
-public class ReadTotemIDTask extends AsyncTask<String, Void, String> {
+public class SetTotemTask extends AsyncTask<String, Void, String> {
 
     Context context;
-    public ReadTotemIDTask(Context context){
+    public SetTotemTask(Context context){
         this.context = context;
     }
 
@@ -87,7 +83,7 @@ public class ReadTotemIDTask extends AsyncTask<String, Void, String> {
             JSONArray jsonArray = jsonObject.getJSONArray("totem_id");
             JSONObject object = jsonArray.getJSONObject(0);
             Toast.makeText(context.getApplicationContext(), "Totem configurato correttamente con ID: " + object.getInt("totemId"), Toast.LENGTH_LONG).show();
-            new ManagementSharedPreference().save(context.getApplicationContext(), object.getInt("totemId"));
+            new ManagementSharedPreference().save(context.getApplicationContext(), object.getInt("totemId"), object.getString("type"));
             activity.setVisibility();
         } catch (JSONException e) {
             e.printStackTrace();
