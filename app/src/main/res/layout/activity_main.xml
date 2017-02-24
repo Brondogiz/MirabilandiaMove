@@ -40,7 +40,7 @@
             android:id="@+id/radio_standard_totem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Totem Standar"
+            android:text="Totem standard"
             android:textSize="19dp" />
 
         <RadioButton
@@ -55,6 +55,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Totem fine fila"
+            android:textSize="19dp" />
+
+        <RadioButton
+            android:id="@+id/radio_seller_totem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Totem venditore"
             android:textSize="19dp" />
     </RadioGroup>
 

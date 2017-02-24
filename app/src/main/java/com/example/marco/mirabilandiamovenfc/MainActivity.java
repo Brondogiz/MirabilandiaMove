@@ -25,13 +25,11 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     public final String TAG = "DemoNFC";
     public static final String MIME_TEXT_PLAIN = "text/plain";
+    public static final int TAG_MESSAGES_SIZE = 3;
     private Tag tag;
 
     private NfcAdapter nfcAdapter;
@@ -122,28 +121,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-   /* private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
-
-        //create the message in according with the standard
-        String lang = "en";
-        byte[] textBytes = text.getBytes();
-        byte[] langBytes = lang.getBytes("US-ASCII");
-        int langLength = langBytes.length;
-        int textLength = textBytes.length;
-
-        byte[] payload = new byte[1 + langLength + textLength];
-        payload[0] = (byte) langLength;
-
-        // copy langbytes and textbytes into payload
-        System.arraycopy(langBytes, 0, payload, 1, langLength);
-        System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
-
-        NdefRecord recordNFC = new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload);
-        return recordNFC;
-    }*/
-
-
     private void handleIntent(Intent intent) {
         String action = intent.getAction();
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
@@ -200,10 +177,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private class NdefReaderTask extends AsyncTask<Tag, Void, String> {
+    private class NdefReaderTask extends AsyncTask<Tag, Void, String[]> {
 
         @Override
-        protected String doInBackground(Tag... params) {
+        protected String[] doInBackground(Tag... params) {
             Tag tag = params[0];
 
             Ndef ndef = Ndef.get(tag);
@@ -212,22 +189,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
             NdefMessage ndefMessage = ndef.getCachedNdefMessage();
-
             NdefRecord[] records = ndefMessage.getRecords();
+            String[] result = new String[TAG_MESSAGES_SIZE];
+            int i = 0;
             for (NdefRecord ndefRecord : records) {
                 if (ndefRecord.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(ndefRecord.getType(), NdefRecord.RTD_TEXT)) {
                     try {
-                        return readText(ndefRecord);
+                        result[i] = readText(ndefRecord);
+                        i++;
                     } catch (UnsupportedEncodingException e) {
-                        Log.e(TAG, "Unsupported Encoding", e);
+                        e.printStackTrace();
                     }
-
-
                 }
             }
+            return result;
 
 
-            return null;
         }
 
         private String readText(NdefRecord record) throws UnsupportedEncodingException {
@@ -273,9 +250,15 @@ public class MainActivity extends AppCompatActivity {
             return recordNFC;
         }
 
-        private void write(String userId, String startTime, Tag tag) throws IOException, FormatException {
+        //Metodo che permette di scrivere un tag
+        private void write(String userId, String startTime, String startTotemID, Tag tag) throws IOException, FormatException {
+            NdefRecord[] records;
+            if (startTime == null || startTotemID == null) {
+                records = new NdefRecord[]{createRecord(userId)};
 
-            NdefRecord[] records = {createRecord(userId), createRecord(startTime)};
+            } else {
+                records = new NdefRecord[]{createRecord(userId), createRecord(startTime), createRecord(startTotemID)};
+            }
             NdefMessage message = new NdefMessage(records);
             Ndef ndef = Ndef.get(tag);
             ndef.connect();
@@ -284,36 +267,33 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(String[] result) {
             if (result != null) {
-                txtMessageNfc.setText("CodeID: " + result);
-                codeID = Integer.parseInt(result);
+                txtMessageNfc.setText("CodeID: " + result[0]);
+                codeID = Integer.parseInt(result[0]);
                 Calendar currentTime = Calendar.getInstance();
                 ManagementSharedPreference managementSharedPreference = new ManagementSharedPreference();
+                if (!codeList.contains(Integer.parseInt(result[0]))) {
+                    new AddIDTask().execute(String.valueOf(Integer.parseInt(result[0])));
+                    codeList.add(Integer.parseInt(result[0]));
+                }
 
-                if (managementSharedPreference.getTotemID(MainActivity.this) == -1) {
-                    Toast.makeText(MainActivity.this, "Totem non ancora programmato", Toast.LENGTH_SHORT);
-                } else {
-                    if (managementSharedPreference.getTotemType(MainActivity.this).equals("Totem in fila")) {
-                        try {
-                            write(result, String.valueOf(currentTime.getTime().getTime()), tag);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (FormatException e) {
-                            e.printStackTrace();
+                //Gestione totem
+                switch (managementSharedPreference.getTotemType(MainActivity.this)) {
+                    case "Totem standard":
+                        if (result[1] != null) {
+                            try {
+                                write(result[0], null, null, tag);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (FormatException e) {
+                                e.printStackTrace();
+                            }
                         }
-
-                    }
-                    if (!codeList.contains(Integer.parseInt(result))) {
-                        Log.v("CODEID", String.valueOf(codeList.contains(Integer.parseInt(result))));
-                        new AddIDTask().execute(String.valueOf(Integer.parseInt(result)));
-                        codeList.add(Integer.parseInt(result));
-                    } else {
-
                         if (!timers.containsKey(codeID)) {
-                            timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                            timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
                             BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                            backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+                            backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
 
                         } else {
                             for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
@@ -322,9 +302,9 @@ public class MainActivity extends AppCompatActivity {
                                     long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
                                     if (diffInSec > 20) {
                                         timers.remove(entry.getKey());
-                                        timers.put(Integer.valueOf(result), currentTime.getTime().getTime());
+                                        timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
                                         BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                        backgroundTask.execute(result, String.valueOf(Utilities.POINT_OF_TOTEM));
+                                        backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
 
                                     }
                                     break;
@@ -332,8 +312,50 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                         }
-
-                    }
+                        break;
+                    case "Totem inizio fila":
+                        try {
+                            write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (FormatException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    case "Totem fine fila":
+                        if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
+                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
+                            BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                            if (diffInSec <= 600) {
+                                backgroundTask.execute(result[0], String.valueOf(Utilities.MIN_POINT_OF_TOTEM_QUEUE));
+                            } else if (diffInSec > 600 && diffInSec <= 1800) {
+                                backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_LOW_POINT_OF_TOTEM_QUEUE));
+                            } else if (diffInSec > 1800 && diffInSec <= 5400) {
+                                backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_HIGH_POINT_OF_TOTEM_QUEUE));
+                            } else {
+                                backgroundTask.execute(result[0], String.valueOf(Utilities.HIGH_POINT_OF_TOTEM_QUEUE));
+                            }
+                            try {
+                                write(result[0], null, null, tag);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (FormatException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        break;
+                    case "Totem venditore":
+                        if (result[1] != null) {
+                            try {
+                                write(result[0], null, null, tag);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (FormatException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        new BackgroundTask(MainActivity.this).execute(result[0], String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
+                        break;
                 }
             }
         }

@@ -42,7 +42,6 @@ public class AddIDTask extends AsyncTask<String, Void, String> {
             OutputStream OS = httpURLConnection.getOutputStream();
             BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
             String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeID), "UTF-8");
-            Log.v("Siamo qua", data);
             bufferedWriter.write(data);
             bufferedWriter.flush();
             bufferedWriter.close();
