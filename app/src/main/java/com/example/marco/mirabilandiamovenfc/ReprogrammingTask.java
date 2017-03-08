@@ -34,7 +34,6 @@ public class ReprogrammingTask extends AsyncTask<Integer, Void, Void> {
             OutputStream OS = httpURLConnection.getOutputStream();
             BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
             String data = URLEncoder.encode("totemId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(totemId), "UTF-8");
-            Log.v("Siamo qua", data);
             bufferedWriter.write(data);
             bufferedWriter.flush();
             bufferedWriter.close();
