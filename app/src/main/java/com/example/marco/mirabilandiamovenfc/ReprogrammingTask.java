@@ -24,7 +24,7 @@ public class ReprogrammingTask extends AsyncTask<Integer, Void, Void> {
 
     @Override
     protected Void doInBackground(Integer... integers) {
-        String connect_url = "http://192.168.1.7/delete_totem.php";
+        String connect_url = "http://192.168.43.34/delete_totem.php";
         totemId = integers[0];
         try {
             URL url = new URL(connect_url);

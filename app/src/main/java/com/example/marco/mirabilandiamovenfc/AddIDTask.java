@@ -31,7 +31,7 @@ public class AddIDTask extends AsyncTask<String, Void, String> {
 
     @Override
     protected String doInBackground(String... params) {
-        String connect_url = "http://192.168.1.7/add_user_id.php";
+        String connect_url = "http://192.168.43.34/add_user_id.php";
         codeID = Integer.parseInt(params[0]);
         Log.v("Siamo qua", String.valueOf(codeID));
         try {

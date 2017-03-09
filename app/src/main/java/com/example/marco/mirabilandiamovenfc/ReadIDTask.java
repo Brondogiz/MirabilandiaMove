@@ -36,7 +36,7 @@ public class ReadIDTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... voids) {
-        String connect_url = "http://192.168.1.7/select_all_id.php";
+        String connect_url = "http://192.168.43.34/select_all_id.php";
 
         try {
             URL url = new URL(connect_url);

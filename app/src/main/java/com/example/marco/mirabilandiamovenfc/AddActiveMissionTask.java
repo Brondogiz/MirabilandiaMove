@@ -29,7 +29,7 @@ public class AddActiveMissionTask extends AsyncTask<String, Void, Void> {
 
     @Override
     protected Void doInBackground(String... params) {
-        String connect_url = "http://192.168.1.7/add_active_mission.php";
+        String connect_url = "http://192.168.43.34/add_active_mission.php";
         codeID = Integer.parseInt(params[0]);
         missionID = Integer.parseInt(params[1]);
         try {

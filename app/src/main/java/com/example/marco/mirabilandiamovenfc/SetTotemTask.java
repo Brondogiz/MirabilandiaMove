@@ -34,7 +34,7 @@ public class SetTotemTask extends AsyncTask<String, Void, String> {
 
     @Override
     protected String doInBackground(String... params) {
-        String connect_url = "http://192.168.1.7/set_totem.php";
+        String connect_url = "http://192.168.43.34/set_totem.php";
         String totem_type = params[0];
 
         try {

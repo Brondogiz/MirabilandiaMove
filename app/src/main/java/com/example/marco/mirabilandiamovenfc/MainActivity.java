@@ -282,85 +282,86 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 new SetMissionTask(codeID).execute();
-
-                //Gestione totem
-                switch (managementSharedPreference.getTotemType(MainActivity.this)) {
-                    case "Totem standard":
-                        if (result[1] != null) {
-                            try {
-                                write(result[0], null, null, tag);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (FormatException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (!timers.containsKey(codeID)) {
-                            timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
-                            BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                            backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
-
-                        } else {
-                            for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
-                                if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
-                                    long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
-                                    long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
-                                    if (diffInSec > 20) {
-                                        timers.remove(entry.getKey());
-                                        timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
-                                        BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                        backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
-
-                                    }
-                                    break;
+                if (managementSharedPreference.getTotemType(MainActivity.this) != null) {
+                    //Gestione totem
+                    switch (managementSharedPreference.getTotemType(MainActivity.this)) {
+                        case "Totem standard":
+                            if (result[1] != null) {
+                                try {
+                                    write(result[0], null, null, tag);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (FormatException e) {
+                                    e.printStackTrace();
                                 }
                             }
+                            if (!timers.containsKey(codeID)) {
+                                timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
+                                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
 
-                        }
-                        break;
-                    case "Totem inizio fila":
-                        try {
-                            write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (FormatException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "Totem fine fila":
-                        if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
-                            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
-                            BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                            if (diffInSec <= 600) {
-                                backgroundTask.execute(result[0], String.valueOf(Utilities.MIN_POINT_OF_TOTEM_QUEUE));
-                            } else if (diffInSec > 600 && diffInSec <= 1800) {
-                                backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_LOW_POINT_OF_TOTEM_QUEUE));
-                            } else if (diffInSec > 1800 && diffInSec <= 5400) {
-                                backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_HIGH_POINT_OF_TOTEM_QUEUE));
                             } else {
-                                backgroundTask.execute(result[0], String.valueOf(Utilities.HIGH_POINT_OF_TOTEM_QUEUE));
+                                for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
+                                    if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
+                                        long diffInMs = currentTime.getTime().getTime() - Long.valueOf(String.valueOf(entry.getValue()));
+                                        long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
+                                        if (diffInSec > 20) {
+                                            timers.remove(entry.getKey());
+                                            timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
+                                            BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                            backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
+
+                                        }
+                                        break;
+                                    }
+                                }
+
                             }
+                            break;
+                        case "Totem inizio fila":
                             try {
-                                write(result[0], null, null, tag);
+                                write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (FormatException e) {
                                 e.printStackTrace();
                             }
-                        }
-                        break;
-                    case "Totem venditore":
-                        if (result[1] != null) {
-                            try {
-                                write(result[0], null, null, tag);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (FormatException e) {
-                                e.printStackTrace();
+                            break;
+                        case "Totem fine fila":
+                            if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
+                                long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
+                                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
+                                if (diffInSec <= 600) {
+                                    backgroundTask.execute(result[0], String.valueOf(Utilities.MIN_POINT_OF_TOTEM_QUEUE));
+                                } else if (diffInSec > 600 && diffInSec <= 1800) {
+                                    backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_LOW_POINT_OF_TOTEM_QUEUE));
+                                } else if (diffInSec > 1800 && diffInSec <= 5400) {
+                                    backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_HIGH_POINT_OF_TOTEM_QUEUE));
+                                } else {
+                                    backgroundTask.execute(result[0], String.valueOf(Utilities.HIGH_POINT_OF_TOTEM_QUEUE));
+                                }
+                                try {
+                                    write(result[0], null, null, tag);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (FormatException e) {
+                                    e.printStackTrace();
+                                }
                             }
-                        }
-                        new BackgroundTask(MainActivity.this).execute(result[0], String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
-                        break;
+                            break;
+                        case "Totem venditore":
+                            if (result[1] != null) {
+                                try {
+                                    write(result[0], null, null, tag);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (FormatException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            new BackgroundTask(MainActivity.this).execute(result[0], String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
+                            break;
+                    }
                 }
             }
         }

@@ -35,7 +35,7 @@ public class BackgroundTask extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... params) {
 
-        String connect_url = "http://192.168.1.7/insert_points_database.php";
+        String connect_url = "http://192.168.43.34/insert_points_database.php";
         String codeId = params[0];
         String points = params[1];
 
