@@ -34,7 +34,7 @@ public class SetTotemTask extends AsyncTask<String, Void, String> {
 
     @Override
     protected String doInBackground(String... params) {
-        String connect_url = "http://192.168.43.34/set_totem.php";
+        String connect_url = "http://192.168.1.7/set_totem.php";
         String totem_type = params[0];
 
         try {
@@ -82,7 +82,7 @@ public class SetTotemTask extends AsyncTask<String, Void, String> {
             JSONObject jsonObject = new JSONObject(String.valueOf(result));
             JSONArray jsonArray = jsonObject.getJSONArray("totem_id");
             JSONObject object = jsonArray.getJSONObject(0);
-            Toast.makeText(context.getApplicationContext(), "Totem configurato correttamente con ID: " + object.getInt("totemId"), Toast.LENGTH_LONG).show();
+            Toast.makeText(context.getApplicationContext(), "Totem configurato correttamente con ID: " + object.getInt("totemId"), Toast.LENGTH_SHORT).show();
             new ManagementSharedPreference().save(context.getApplicationContext(), object.getInt("totemId"), object.getString("type"));
             activity.setVisibility();
         } catch (JSONException e) {

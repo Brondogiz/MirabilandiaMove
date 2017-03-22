@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -13,6 +12,7 @@ import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -23,17 +23,13 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 
@@ -180,10 +176,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private class NdefReaderTask extends AsyncTask<Tag, Void, String[]> {
+    private class NdefReaderTask extends AsyncTask<Tag, Void, String> {
 
         @Override
-        protected String[] doInBackground(Tag... params) {
+        protected String doInBackground(Tag... params) {
+            Log.v("SONO QUA", "SONO QUA");
             Tag tag = params[0];
 
             Ndef ndef = Ndef.get(tag);
@@ -193,21 +190,17 @@ public class MainActivity extends AppCompatActivity {
 
             NdefMessage ndefMessage = ndef.getCachedNdefMessage();
             NdefRecord[] records = ndefMessage.getRecords();
-            String[] result = new String[TAG_MESSAGES_SIZE];
-            int i = 0;
             for (NdefRecord ndefRecord : records) {
                 if (ndefRecord.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(ndefRecord.getType(), NdefRecord.RTD_TEXT)) {
                     try {
-                        result[i] = readText(ndefRecord);
-                        i++;
+                        return readText(ndefRecord);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
                 }
             }
-            return result;
 
-
+            return null;
         }
 
         private String readText(NdefRecord record) throws UnsupportedEncodingException {
@@ -233,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
             return new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
         }
 
-        private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
+        /*private NdefRecord createRecord(String text) throws UnsupportedEncodingException {
 
             //create the message in according with the standard
             String lang = "en";
@@ -267,26 +260,27 @@ public class MainActivity extends AppCompatActivity {
             ndef.connect();
             ndef.writeNdefMessage(message);
             ndef.close();
-        }
+        }*/
 
         @Override
-        protected void onPostExecute(String[] result) {
+        protected void onPostExecute(String result) {
             if (result != null) {
-                txtMessageNfc.setText("CodeID: " + result[0]);
-                codeID = Integer.parseInt(result[0]);
+                txtMessageNfc.setText("CodeID: " + result);
+                codeID = Integer.parseInt(result);
                 Calendar currentTime = Calendar.getInstance();
                 ManagementSharedPreference managementSharedPreference = new ManagementSharedPreference();
-                if (!codeList.contains(Integer.parseInt(result[0]))) {
-                    new AddIDTask().execute(String.valueOf(Integer.parseInt(result[0])));
-                    codeList.add(Integer.parseInt(result[0]));
+                if (!codeList.contains(Integer.parseInt(String.valueOf(codeID)))) {
+                    new AddUserTask().execute(String.valueOf(Integer.parseInt(String.valueOf(codeID))));
+                    codeList.add(Integer.parseInt(String.valueOf(codeID)));
                 }
-
-                new SetMissionTask(codeID).execute();
+                new ReadMissionsTask(codeID).execute();
                 if (managementSharedPreference.getTotemType(MainActivity.this) != null) {
+                    final int totemId = managementSharedPreference.getTotemID(MainActivity.this);
+                    String totemType = managementSharedPreference.getTotemType(MainActivity.this);
                     //Gestione totem
-                    switch (managementSharedPreference.getTotemType(MainActivity.this)) {
+                    switch (totemType) {
                         case "Totem standard":
-                            if (result[1] != null) {
+                         /*   if (result[1] != null) {
                                 try {
                                     write(result[0], null, null, tag);
                                 } catch (IOException e) {
@@ -294,11 +288,19 @@ public class MainActivity extends AppCompatActivity {
                                 } catch (FormatException e) {
                                     e.printStackTrace();
                                 }
-                            }
+                            }*/
+                            new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
+                            //Parte il task per inserire su database il totem attivato con la relativa data
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
+                                }
+                            }, 500);
                             if (!timers.containsKey(codeID)) {
-                                timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
+                                timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
                                 BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
+                                backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
 
                             } else {
                                 for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
@@ -307,9 +309,9 @@ public class MainActivity extends AppCompatActivity {
                                         long diffInSec = TimeUnit.MILLISECONDS.toSeconds(diffInMs);
                                         if (diffInSec > 20) {
                                             timers.remove(entry.getKey());
-                                            timers.put(Integer.valueOf(result[0]), currentTime.getTime().getTime());
+                                            timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
                                             BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                            backgroundTask.execute(result[0], String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
+                                            backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
 
                                         }
                                         break;
@@ -319,16 +321,30 @@ public class MainActivity extends AppCompatActivity {
                             }
                             break;
                         case "Totem inizio fila":
-                            try {
-                                write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
+                            //CANCELLARE PRIMA EVENTUALI RECORD DI TOTEM DI INIZIO FILA DALLA TABELLA TOTEM CHECKED
+                           // new DeleteTotemCheckedTask().execute(codeID, managementSharedPreference.getTotemID(MainActivity.this) - 1);
+                            new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
+                            //Parte il task per inserire su database il totem attivato con la relativa data
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
+                                }
+                            }, 500);
+
+
+                          /*  try {
+                               write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (FormatException e) {
                                 e.printStackTrace();
-                            }
+                            }*/
                             break;
                         case "Totem fine fila":
-                            if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
+                            new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
+                            //Log.v("RISULTATO", String.valueOf(currentTime.getTime().getTime()));
+                           /* if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
                                 long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
                                 BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                                 if (diffInSec <= 600) {
@@ -347,24 +363,27 @@ public class MainActivity extends AppCompatActivity {
                                 } catch (FormatException e) {
                                     e.printStackTrace();
                                 }
-                            }
+                            }*/
                             break;
                         case "Totem venditore":
-                            if (result[1] != null) {
-                                try {
-                                    write(result[0], null, null, tag);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (FormatException e) {
-                                    e.printStackTrace();
+                            new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
+                            //Parte il task per inserire su database il totem attivato con la relativa data
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
-                            }
-                            new BackgroundTask(MainActivity.this).execute(result[0], String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
+                            }, 500);
+                            new BackgroundTask(MainActivity.this).execute(result, String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
                             break;
                     }
                 }
             }
         }
+    }
+
+    public void setProgressMission(){
+
     }
 
     public void onSubmitClicked(View view) {

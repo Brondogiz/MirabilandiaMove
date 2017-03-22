@@ -17,7 +17,7 @@ import java.net.URLEncoder;
  * Created by erik_ on 08/03/2017.
  */
 
-public class AddActiveMissionTask extends AsyncTask<String, Void, Void> {
+public class AddActiveMissionTask extends AsyncTask<Integer, Void, Void> {
     int codeID;
     int missionID;
 
@@ -28,10 +28,10 @@ public class AddActiveMissionTask extends AsyncTask<String, Void, Void> {
 
 
     @Override
-    protected Void doInBackground(String... params) {
-        String connect_url = "http://192.168.43.34/add_active_mission.php";
-        codeID = Integer.parseInt(params[0]);
-        missionID = Integer.parseInt(params[1]);
+    protected Void doInBackground(Integer... params) {
+        String connect_url = "http://192.168.1.7/add_active_mission.php";
+        codeID = params[0];
+        missionID = params[1];
         try {
             URL url = new URL(connect_url);
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();

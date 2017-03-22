@@ -30,12 +30,12 @@ import java.util.Set;
  * Created by erik_ on 07/03/2017.
  */
 
-public class SetMissionTask extends AsyncTask<Void, Void, String> {
+public class ReadMissionsTask extends AsyncTask<Void, Void, String> {
     List<Integer> missionsId;
-    Integer codeID;
+    Integer codeId;
 
-    public SetMissionTask(Integer codeID) {
-        this.codeID = codeID;
+    public ReadMissionsTask(Integer codeId) {
+        this.codeId = codeId;
         this.missionsId = new ArrayList<>();
     }
 
@@ -46,7 +46,7 @@ public class SetMissionTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... voids) {
-        String connect_url = "http://192.168.43.34/read_missions.php";
+        String connect_url = "http://192.168.1.7/read_missions.php";
 
         try {
             URL url = new URL(connect_url);
@@ -56,7 +56,7 @@ public class SetMissionTask extends AsyncTask<Void, Void, String> {
             httpURLConnection.setDoInput(true);
             OutputStream OS = httpURLConnection.getOutputStream();
             BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
-            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeID), "UTF-8");
+            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeId), "UTF-8");
             bufferedWriter.write(data);
             bufferedWriter.flush();
             bufferedWriter.close();
@@ -94,13 +94,10 @@ public class SetMissionTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected void onPostExecute(String result) {
-        Log.v("RISULTATO", result);
         Random random = new Random();
         Set<Integer> missions = new HashSet<>();
-        JSONObject jsonObjectMissionsId = null;
         try {
-            Log.v("RISULTATO", "CI SONO");
-            jsonObjectMissionsId = new JSONObject(String.valueOf(result));
+            JSONObject jsonObjectMissionsId= new JSONObject(String.valueOf(result));
             JSONArray jsonArrayMissionsId = jsonObjectMissionsId.getJSONArray("missions_id");
             for (int i = 0; i < jsonArrayMissionsId.length(); i++) {
                 JSONObject object = jsonArrayMissionsId.getJSONObject(i);
@@ -109,38 +106,34 @@ public class SetMissionTask extends AsyncTask<Void, Void, String> {
             while (missions.size() < 2) {
                 missions.add(random.nextInt(missionsId.size()));
             }
-            Log.v("RISULTATO", String.valueOf(missions));
-
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        Log.v("RISULTATO", "CI SONO");
-        JSONObject jsonObjectMissions1Id = null;
         try {
-            jsonObjectMissions1Id = new JSONObject(String.valueOf(result));
+            JSONObject jsonObjectMissions1Id = new JSONObject(String.valueOf(result));
             JSONArray jsonArrayActiveMission = jsonObjectMissions1Id.getJSONArray("active_mission");
-            Log.v("RISULTATO LUNGHEZZA", String.valueOf(jsonArrayActiveMission.length()));
             for (int j = 0; j <= jsonArrayActiveMission.length(); j++) {
                 if(jsonArrayActiveMission.length() == 0){
                     Log.v("RISULTATO", "Non ha nessuna missione");
                     for (Integer missionId : missions) {
-                        new AddActiveMissionTask().execute(String.valueOf(codeID), String.valueOf(missionsId.get(missionId)));
+                        new AddActiveMissionTask().execute(codeId, missionsId.get(missionId));
                     }
-                } else if(jsonArrayActiveMission.length() == 1){
+                } else if(jsonArrayActiveMission.length() == 1 && jsonArrayActiveMission.getJSONObject(j).getInt("numberMission") < 2){
                     Log.v("RISULTATO", "Ha una missione");
                     for (Integer missionId : missions) {
-                        new AddActiveMissionTask().execute(String.valueOf(codeID), String.valueOf(missionsId.get(missionId)));
-                        break;
+                        new AddActiveMissionTask().execute(codeId, missionsId.get(missionId));
+                        //break;
                     }
+                    break;
 
-                } else if(jsonArrayActiveMission.length() == 2 || jsonArrayActiveMission.getJSONObject(j).getInt("numberMission") == 2){
+                } else if(jsonArrayActiveMission.length() == 2 || jsonArrayActiveMission.getJSONObject(j).getInt("numberMission") >= 2){
                     Log.v("RISULTATO", "Ha già due missioni");
+                    break;
                 }
             }
         } catch (JSONException e) {
-            Log.v("RISULTATO", e.toString());
             e.printStackTrace();
         }
 
