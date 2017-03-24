@@ -124,7 +124,7 @@ public class ReadMissionsTask extends AsyncTask<Void, Void, String> {
                     Log.v("RISULTATO", "Ha una missione");
                     for (Integer missionId : missions) {
                         new AddActiveMissionTask().execute(codeId, missionsId.get(missionId));
-                        //break;
+                        break;
                     }
                     break;
 

@@ -180,7 +180,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(Tag... params) {
-            Log.v("SONO QUA", "SONO QUA");
             Tag tag = params[0];
 
             Ndef ndef = Ndef.get(tag);
@@ -277,6 +276,7 @@ public class MainActivity extends AppCompatActivity {
                 if (managementSharedPreference.getTotemType(MainActivity.this) != null) {
                     final int totemId = managementSharedPreference.getTotemID(MainActivity.this);
                     String totemType = managementSharedPreference.getTotemType(MainActivity.this);
+                    new ManagementMissionsTask().execute(String.valueOf(codeID), String.valueOf(totemId), totemType);
                     //Gestione totem
                     switch (totemType) {
                         case "Totem standard":
@@ -291,16 +291,17 @@ public class MainActivity extends AppCompatActivity {
                             }*/
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
                             //Parte il task per inserire su database il totem attivato con la relativa data
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
-                                }
-                            }, 500);
+
                             if (!timers.containsKey(codeID)) {
                                 timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
                                 BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                                 backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
+                                    }
+                                }, 500);
 
                             } else {
                                 for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
@@ -312,7 +313,12 @@ public class MainActivity extends AppCompatActivity {
                                             timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
                                             BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                                             backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
-
+                                            new Handler().postDelayed(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
+                                                }
+                                            }, 500);
                                         }
                                         break;
                                     }
@@ -380,10 +386,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-    }
-
-    public void setProgressMission(){
-
     }
 
     public void onSubmitClicked(View view) {

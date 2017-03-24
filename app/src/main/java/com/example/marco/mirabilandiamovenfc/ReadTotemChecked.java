@@ -105,11 +105,13 @@ public class ReadTotemChecked extends AsyncTask<String, Void, String> {
         try {
             JSONObject jsonObject = new JSONObject(String.valueOf(result));
             JSONArray jsonArray = jsonObject.getJSONArray("last_totem_checked");
-            if (jsonArray.isNull(0)) {
+
                 int lastTotemId = jsonArray.getJSONObject(0).getInt("totemId");
                 SimpleDateFormat activationDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Date activationDate = activationDateFormat.parse(jsonArray.getJSONObject(0).getString("activationDate"));
                 String lastTotemType = jsonArray.getJSONObject(0).getString("type");
+                Log.v("RISULTATO", String.valueOf(activationDate));
+                Log.v("RISULTATO", String.valueOf(lastTotemType));
                 if (currentTotemId == lastTotemId + 1 && lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem fine fila")) {
                     long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - activationDate.getTime());
                     BackgroundTask backgroundTask = new BackgroundTask(context);
@@ -128,7 +130,7 @@ public class ReadTotemChecked extends AsyncTask<String, Void, String> {
                 } else if (lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem standard") || lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem venditore")) {
                     new DeleteTotemCheckedTask().execute(codeId, lastTotemId);
                 }
-            }
+
 
         } catch (JSONException e) {
             e.printStackTrace();
