@@ -100,7 +100,6 @@ public class ReadTotemChecked extends AsyncTask<String, Void, String> {
 
     @Override
     protected void onPostExecute(String result) {
-        Log.v("RISULTATO", result);
         Calendar currentTime = Calendar.getInstance();
         try {
             JSONObject jsonObject = new JSONObject(String.valueOf(result));
@@ -110,8 +109,6 @@ public class ReadTotemChecked extends AsyncTask<String, Void, String> {
                 SimpleDateFormat activationDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Date activationDate = activationDateFormat.parse(jsonArray.getJSONObject(0).getString("activationDate"));
                 String lastTotemType = jsonArray.getJSONObject(0).getString("type");
-                Log.v("RISULTATO", String.valueOf(activationDate));
-                Log.v("RISULTATO", String.valueOf(lastTotemType));
                 if (currentTotemId == lastTotemId + 1 && lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem fine fila")) {
                     long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - activationDate.getTime());
                     BackgroundTask backgroundTask = new BackgroundTask(context);
@@ -124,7 +121,7 @@ public class ReadTotemChecked extends AsyncTask<String, Void, String> {
                     } else {
                         backgroundTask.execute(String.valueOf(codeId), String.valueOf(Utilities.HIGH_POINT_OF_TOTEM_QUEUE));
                     }
-                    new DeleteTotemCheckedTask().execute(codeId, lastTotemId);
+                    //new DeleteTotemCheckedTask().execute(codeId, lastTotemId);
                 } else if (lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem inizio fila")) {
                     new DeleteTotemCheckedTask().execute(codeId, lastTotemId);
                 } else if (lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem standard") || lastTotemType.equals("Totem inizio fila") && currentTotemType.equals("Totem venditore")) {

@@ -27,8 +27,7 @@ public class ManagementMissionsTask extends AsyncTask<String, Void, Void> {
     protected Void doInBackground(String... params) {
         String connect_url = "http://192.168.1.7/missions_management.php";
         codeId = Integer.parseInt(params[0]);
-        totemId = Integer.parseInt(params[1]);
-        totemType = params[2];
+        totemType = params[1];
         try {
             URL url = new URL(connect_url);
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -37,7 +36,6 @@ public class ManagementMissionsTask extends AsyncTask<String, Void, Void> {
             OutputStream OS = httpURLConnection.getOutputStream();
             BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
             String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeId), "UTF-8") + "&" +
-                    URLEncoder.encode("totemId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(totemId), "UTF-8") + "&" +
                     URLEncoder.encode("totemType", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(totemType), "UTF-8");
             bufferedWriter.write(data);
             bufferedWriter.flush();

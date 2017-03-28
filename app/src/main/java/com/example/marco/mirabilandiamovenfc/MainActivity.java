@@ -276,7 +276,6 @@ public class MainActivity extends AppCompatActivity {
                 if (managementSharedPreference.getTotemType(MainActivity.this) != null) {
                     final int totemId = managementSharedPreference.getTotemID(MainActivity.this);
                     String totemType = managementSharedPreference.getTotemType(MainActivity.this);
-                    new ManagementMissionsTask().execute(String.valueOf(codeID), String.valueOf(totemId), totemType);
                     //Gestione totem
                     switch (totemType) {
                         case "Totem standard":
@@ -302,7 +301,6 @@ public class MainActivity extends AppCompatActivity {
                                         new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                     }
                                 }, 500);
-
                             } else {
                                 for (Map.Entry<Integer, Long> entry : timers.entrySet()) {
                                     if (Integer.parseInt(String.valueOf(entry.getKey())) == codeID) {
@@ -311,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
                                         if (diffInSec > 20) {
                                             timers.remove(entry.getKey());
                                             timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
+                                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
                                             BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                                             backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
                                             new Handler().postDelayed(new Runnable() {
@@ -337,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
                             }, 500);
-
+                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
 
                           /*  try {
                                write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
@@ -349,6 +348,13 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         case "Totem fine fila":
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
+                                }
+                            }, 500);
+                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
                             //Log.v("RISULTATO", String.valueOf(currentTime.getTime().getTime()));
                            /* if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
                                 long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
@@ -380,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
                             }, 500);
+                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
                             new BackgroundTask(MainActivity.this).execute(result, String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
                             break;
                     }
