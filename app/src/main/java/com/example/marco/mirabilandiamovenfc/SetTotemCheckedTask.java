@@ -21,11 +21,12 @@ import java.net.URLEncoder;
  */
 
 public class SetTotemCheckedTask extends AsyncTask<String, Void, Void> {
+    int codeId;
 
     @Override
     protected Void doInBackground(String... params) {
         String connect_url = "http://192.168.1.7/set_totem_checked.php";
-        int codeId = Integer.parseInt(params[0]);
+        codeId = Integer.parseInt(params[0]);
         int totemId = Integer.parseInt(params[1]);
         Log.v("RISULTATO", String.valueOf(codeId));
         Log.v("RISULTATO", String.valueOf(totemId));
@@ -36,8 +37,8 @@ public class SetTotemCheckedTask extends AsyncTask<String, Void, Void> {
             httpURLConnection.setDoOutput(true);
             OutputStream OS = httpURLConnection.getOutputStream();
             BufferedWriter bufferedWriter = new BufferedWriter((new OutputStreamWriter(OS, "UTF-8")));
-            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeId), "UTF-8")+"&"+
-                    URLEncoder.encode("totemId","UTF-8") + "="+URLEncoder.encode(String.valueOf(totemId),"UTF-8");
+            String data = URLEncoder.encode("codeId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(codeId), "UTF-8") + "&" +
+                    URLEncoder.encode("totemId", "UTF-8") + "=" + URLEncoder.encode(String.valueOf(totemId), "UTF-8");
             bufferedWriter.write(data);
             bufferedWriter.flush();
             bufferedWriter.close();

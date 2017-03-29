@@ -275,19 +275,10 @@ public class MainActivity extends AppCompatActivity {
                 new ReadMissionsTask(codeID).execute();
                 if (managementSharedPreference.getTotemType(MainActivity.this) != null) {
                     final int totemId = managementSharedPreference.getTotemID(MainActivity.this);
-                    String totemType = managementSharedPreference.getTotemType(MainActivity.this);
+                    final String totemType = managementSharedPreference.getTotemType(MainActivity.this);
                     //Gestione totem
                     switch (totemType) {
                         case "Totem standard":
-                         /*   if (result[1] != null) {
-                                try {
-                                    write(result[0], null, null, tag);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (FormatException e) {
-                                    e.printStackTrace();
-                                }
-                            }*/
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
                             //Parte il task per inserire su database il totem attivato con la relativa data
 
@@ -309,7 +300,6 @@ public class MainActivity extends AppCompatActivity {
                                         if (diffInSec > 20) {
                                             timers.remove(entry.getKey());
                                             timers.put(Integer.valueOf(codeID), currentTime.getTime().getTime());
-                                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
                                             BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
                                             backgroundTask.execute(String.valueOf(codeID), String.valueOf(Utilities.POINT_OF_STANDARD_TOTEM));
                                             new Handler().postDelayed(new Runnable() {
@@ -318,6 +308,12 @@ public class MainActivity extends AppCompatActivity {
                                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                                 }
                                             }, 500);
+                                            new Handler().postDelayed(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
+                                                }
+                                            }, 1000);
                                         }
                                         break;
                                     }
@@ -326,8 +322,6 @@ public class MainActivity extends AppCompatActivity {
                             }
                             break;
                         case "Totem inizio fila":
-                            //CANCELLARE PRIMA EVENTUALI RECORD DI TOTEM DI INIZIO FILA DALLA TABELLA TOTEM CHECKED
-                           // new DeleteTotemCheckedTask().execute(codeID, managementSharedPreference.getTotemID(MainActivity.this) - 1);
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
                             //Parte il task per inserire su database il totem attivato con la relativa data
                             new Handler().postDelayed(new Runnable() {
@@ -336,15 +330,12 @@ public class MainActivity extends AppCompatActivity {
                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
                             }, 500);
-                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
-
-                          /*  try {
-                               write(result[0], String.valueOf(currentTime.getTime().getTime()), String.valueOf(managementSharedPreference.getTotemID(MainActivity.this)), tag);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (FormatException e) {
-                                e.printStackTrace();
-                            }*/
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
+                                }
+                            }, 1000);
                             break;
                         case "Totem fine fila":
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
@@ -354,28 +345,12 @@ public class MainActivity extends AppCompatActivity {
                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
                             }, 500);
-                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
-                            //Log.v("RISULTATO", String.valueOf(currentTime.getTime().getTime()));
-                           /* if (result[1] != null && Integer.parseInt(result[2]) + 1 == managementSharedPreference.getTotemID(MainActivity.this)) {
-                                long diffInSec = TimeUnit.MILLISECONDS.toSeconds(currentTime.getTime().getTime() - Long.valueOf(result[1]));
-                                BackgroundTask backgroundTask = new BackgroundTask(MainActivity.this);
-                                if (diffInSec <= 600) {
-                                    backgroundTask.execute(result[0], String.valueOf(Utilities.MIN_POINT_OF_TOTEM_QUEUE));
-                                } else if (diffInSec > 600 && diffInSec <= 1800) {
-                                    backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_LOW_POINT_OF_TOTEM_QUEUE));
-                                } else if (diffInSec > 1800 && diffInSec <= 5400) {
-                                    backgroundTask.execute(result[0], String.valueOf(Utilities.AVERAGE_HIGH_POINT_OF_TOTEM_QUEUE));
-                                } else {
-                                    backgroundTask.execute(result[0], String.valueOf(Utilities.HIGH_POINT_OF_TOTEM_QUEUE));
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
                                 }
-                                try {
-                                    write(result[0], null, null, tag);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (FormatException e) {
-                                    e.printStackTrace();
-                                }
-                            }*/
+                            }, 1000);
                             break;
                         case "Totem venditore":
                             new ReadTotemChecked(getApplicationContext(), totemId, totemType).execute(String.valueOf(codeID));
@@ -386,7 +361,12 @@ public class MainActivity extends AppCompatActivity {
                                     new SetTotemCheckedTask().execute(String.valueOf(codeID), String.valueOf(totemId));
                                 }
                             }, 500);
-                            new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new ManagementMissionsTask().execute(String.valueOf(codeID), totemType);
+                                }
+                            }, 1000);
                             new BackgroundTask(MainActivity.this).execute(result, String.valueOf(Utilities.POINT_OF_SELLER_TOTEM));
                             break;
                     }
